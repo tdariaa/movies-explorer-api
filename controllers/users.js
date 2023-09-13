@@ -7,7 +7,6 @@ const { NODE_ENV, SECRET_KEY } = process.env;
 const BadRequestError = require('../errors/bad-request-error');
 const NotFoundError = require('../errors/not-found-error');
 const ConflictEerror = require('../errors/conflict-error');
-const UnauthorizedError = require('../errors/unauthorized-error');
 
 module.exports.createUser = (req, res, next) => {
   bcrypt.hash(req.body.password, 10)
@@ -37,7 +36,7 @@ module.exports.login = (req, res, next) => {
         maxAge: 720 * 1000, httpOnly: true, sameSite: 'None', secure: true,
       }).send({ token }).end();
     })
-    .catch((err) => next(new UnauthorizedError(err.message)));
+    .catch(next);
 };
 
 module.exports.logout = (req, res) => res.clearCookie('jwt').status(200).send({ message: 'Выход' });
@@ -74,6 +73,9 @@ module.exports.updateProfile = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return next(new BadRequestError('Переданы некорректные данные при обновлении профиля'));
+      }
+      if (err.code === 11000) {
+        return next(new ConflictEerror('Такой email уже существует на сервере'));
       }
       return next(err);
     });

@@ -19,7 +19,7 @@ const {
   signupValidation,
 } = require('./middlewares/celebrate-validation');
 
-const { PORT = 3000, DB_URL = 'mongodb://localhost:27017/bitfilmsdb' } = process.env;
+const { PORT = 3000, DB_URL = 'mongodb://localhost:27017/filmsdb' } = process.env;
 const app = express();
 
 const limiter = rateLimit({
@@ -27,6 +27,7 @@ const limiter = rateLimit({
   max: 100,
 });
 
+app.use(requestLogger);
 app.use(limiter);
 
 mongoose.connect(DB_URL, {
@@ -47,8 +48,6 @@ const {
 
 app.use(cookieParser());
 
-app.use(requestLogger);
-
 app.get('/crash-test', () => {
   setTimeout(() => {
     throw new Error('Сервер сейчас упадёт');
@@ -57,10 +56,10 @@ app.get('/crash-test', () => {
 
 app.post('/signin', signinValidation, login);
 app.post('/signup', signupValidation, createUser);
-app.get('/signup', logout);
 
 app.use(auth);
 
+app.get('/signout', logout);
 app.use(UsersRouter);
 app.use(CardsRouter);
 app.use('*', (req, res, next) => next(new NotFoundError('Не найдено')));
